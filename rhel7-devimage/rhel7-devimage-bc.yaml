@@ -1,0 +1,10 @@
+kind: "BuildConfig"
+apiVersion: "v1"
+metadata:
+  name: "rhel7-devimage-build"
+spec:
+  source:
+    git:
+      uri: https://github.com/ryan-highley/ocp-advdev-homework.git
+    contextDir: "rhel7-devimage"
+    dockerfile: "FROM registry.access.redhat.com/rhel7.5\nENTRYPOINT /bin/bash"
