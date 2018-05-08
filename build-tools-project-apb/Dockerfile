@@ -1,0 +1,15 @@
+FROM openshift3/apb-base
+
+LABEL "com.redhat.apb.spec"=\
+"dmVyc2lvbjogMS4wCm5hbWU6IGJ1aWxkLXRvb2xzLXByb2plY3QKZGVzY3JpcHRpb246IFRoaXMg\
+QVBCIGNyZWF0ZXMgYSBzdGFuZGFyZCBzZXQgb2YgYnVpbGQgdG9vbHMgaW4gYW4gT0NQIHByb2pl\
+Y3QKYmluZGFibGU6IEZhbHNlCmFzeW5jOiBvcHRpb25hbAptZXRhZGF0YToKICBkaXNwbGF5TmFt\
+ZTogYnVpbGQtdG9vbHMtcHJvamVjdApwbGFuczoKICAtIG5hbWU6IGRlZmF1bHQKICAgIGRlc2Ny\
+aXB0aW9uOiBUaGUgZGVmYXVsdCBwbGFuIGRlcGxveWluZyB0aGUgYnVpbGQgdG9vbHMgcHJvamVj\
+dCBhbmQgdGhlIHRvb2xzCiAgICBmcmVlOiBUcnVlCiAgICBtZXRhZGF0YToge30KICAgIHBhcmFt\
+ZXRlcnM6IFtd"
+
+COPY playbooks /opt/apb/actions
+COPY roles /opt/ansible/roles
+RUN chmod -R g=u /opt/{ansible,apb}
+USER apb

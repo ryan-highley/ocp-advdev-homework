@@ -7,4 +7,10 @@ spec:
     git:
       uri: https://github.com/ryan-highley/ocp-advdev-homework.git
     contextDir: "rhel7-devimage"
-    dockerfile: "FROM registry.access.redhat.com/rhel7.5\nENTRYPOINT /bin/bash"
+  strategy:
+    dockerStrategy:
+      dockerfilePath: "./Dockerfile"
+  output:
+    to:
+      kind: "ImageStreamTag"
+      name: "rhel7-devimage:latest"
