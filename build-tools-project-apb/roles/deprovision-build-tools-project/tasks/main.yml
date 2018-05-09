@@ -9,19 +9,19 @@
 ##############################################################################
 ## Deprovision a route
 ##############################################################################
-#- openshift_v1_route:
-#    name: build-tools-project
-#    namespace: '{{ namespace }}'
-#    state: absent
+- openshift_v1_route:
+    name: build-tools-project-hello-world-route
+    namespace: '{{ namespace }}'
+    state: absent
 
 
 ##############################################################################
 ## Deprovision a service
 ##############################################################################
-#- k8s_v1_service:
-#    name: build-tools-project
-#    namespace: '{{ namespace }}'
-#    state: absent
+- k8s_v1_service:
+    name: build-tools-project-hello-world-svc
+    namespace: '{{ namespace }}'
+    state: absent
 
 
 ##############################################################################
@@ -29,7 +29,7 @@
 ## When removing a Deployment Config, OpenShift will automatically clean up
 ## its associated resources like replication controllers and pods
 ##############################################################################
-#- openshift_v1_deployment_config:
-#    name: build-tools-project
-#    namespace: '{{ namespace }}'
-#    state: absent
+- openshift_v1_deployment_config:
+    name: build-tools-project-hello-world
+    namespace: '{{ namespace }}'
+    state: absent

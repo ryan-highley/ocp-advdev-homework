@@ -13,27 +13,27 @@
 ## one deployment of an image to a new one.
 ## https://docs.openshift.org/latest/architecture/core_concepts/deployments.html#deployments-and-deployment-configurations
 ##############################################################################
-#- name: create deployment config
-#  openshift_v1_deployment_config:
-#    name: build-tools-project
-#    namespace: '{{ namespace }}'
-#    labels:
-#      app: build-tools-project
-#      service: build-tools-project
-#    replicas: 1
-#    selector:
-#      app: build-tools-project
-#      service: build-tools-project
-#    spec_template_metadata_labels:
-#      app: build-tools-project
-#      service: build-tools-project
-#    containers:
-#    - env:
-#      image: docker.io/ansibleplaybookbundle/hello-world:latest # replace with your application image
-#      name: build-tools-project
-#      ports:
-#      - container_port: 8080
-#        protocol: TCP
+- name: create deployment config
+  openshift_v1_deployment_config:
+    name: build-tools-project-hello-world
+    namespace: '{{ namespace }}'
+    labels:
+      app: build-tools-project
+      service: build-tools-project
+    replicas: 1
+    selector:
+      app: build-tools-project
+      service: build-tools-project
+    spec_template_metadata_labels:
+      app: build-tools-project
+      service: build-tools-project
+    containers:
+    - env:
+      image: docker.io/ansibleplaybookbundle/hello-world:latest # replace with your application image
+      name: build-tools-project
+      ports:
+      - container_port: 8080
+        protocol: TCP
 
 
 ##############################################################################
@@ -41,20 +41,20 @@
 ## set of replicated pods in order to proxy the connections it receives to them.
 ## https://docs.openshift.org/latest/architecture/core_concepts/pods_and_services.html#services
 ##############################################################################
-#- name: create build-tools-project service
-#  k8s_v1_service:
-#    name: build-tools-project
-#    namespace: '{{ namespace }}'
-#    labels:
-#      app: build-tools-project
-#      service: build-tools-project
-#    selector:
-#      app: build-tools-project
-#      service: build-tools-project
-#    ports:
-#      - name: web
-#        port: 80
-#        target_port: 8080
+- name: create build-tools-project service
+  k8s_v1_service:
+    name: build-tools-project-hello-world-svc
+    namespace: '{{ namespace }}'
+    labels:
+      app: build-tools-project
+      service: build-tools-project
+    selector:
+      app: build-tools-project
+      service: build-tools-project
+    ports:
+      - name: web
+        port: 80
+        target_port: 8080
 
 
 ##############################################################################
@@ -63,14 +63,14 @@
 ## selector, and an optional security configuration.
 ## https://docs.openshift.org/latest/architecture/core_concepts/routes.html
 ##############################################################################
-#- name: create build-tools-project route
-#  openshift_v1_route:
-#    name: build-tools-project
-#    namespace: '{{ namespace }}'
-#    labels:
-#      app: build-tools-project
-#      service: build-tools-project
-#    to_name: build-tools-project
-#    spec_port_target_port: web
+- name: create build-tools-project route
+  openshift_v1_route:
+    name: build-tools-project-hello-world-route
+    namespace: '{{ namespace }}'
+    labels:
+      app: build-tools-project
+      service: build-tools-project
+    to_name: build-tools-project-hello-world-svc
+    spec_port_target_port: web
 
 

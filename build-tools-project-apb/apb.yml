@@ -1,10 +1,10 @@
 version: 1.0
-name: build-tools-project
+name: build-tools-project-apb
 description: This APB creates a standard set of build tools in an OCP project
 bindable: False
 async: optional
 metadata:
-  displayName: build-tools-project
+  displayName: "MitziCom Build Tools Project"
 plans:
   - name: default
     description: The default plan deploying the build tools project and the tools
