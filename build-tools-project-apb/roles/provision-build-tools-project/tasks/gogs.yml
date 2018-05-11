@@ -1,0 +1,156 @@
+- name: create pg instance
+  shell: "oc new-app postgresql-persistent -n {{ namespace }} --param DATABASE_SERVICE_NAME={{ gogs_db_app_label }} --param POSTGRESQL_DATABASE={{ gogs_db_password }} --param POSTGRESQL_USER={{ gogs_db_user }} --param POSTGRESQL_PASSWORD={{ gogs_db_password }} --param VOLUME_CAPACITY={{ gogs_db_volume_request }} -l app={{ gogs_db_app_label }},service={{ gogs_service_label }}"
+
+- name: register pg service
+  k8s_v1_service:
+    name: '{{ gogs_db_app_label }}'
+    namespace: '{{ namespace }}'
+    state: present
+  register: gogs_db_service
+
+- name: create gogs data pvc
+  k8s_v1_persistent_volume_claim:
+    name: gogs-data
+    namespace: '{{ namespace }}'
+    labels:
+      app: '{{ gogs_app_label }}'
+      service: '{{ gogs_service_label }}'
+    access_modes:
+      - ReadWriteOnce
+    resources_requests:
+      storage: '{{ gogs_volume_request }}'
+
+- name: create gogs image stream
+  openshift_v1_image_stream:
+    name: gogs-images
+    namespace: '{{ namespace }}'
+    labels:
+      app: '{{ gogs_app_label }}'
+      service: '{{ gogs_service_label }}'
+
+- name: import gogs image
+  command: 'oc import-image gogs-images -n {{ namespace }} --from="docker.io/wkulhanek/gogs:11.34"'
+# - name: import gogs image
+#   openshift_v1_image_stream_import:
+#     name: gogs-images
+#     namespace: '{{ namespace }}'
+#     images:
+#     - from:
+#         kind: DockerImage
+#         name: docker.io/wkulhanek/gogs:11.34
+#       name: "11.34"
+#       reference_policy:
+#         type: Source
+
+- name: create gogs deployment config
+  openshift_v1_deployment_config:
+    name: gogs
+    namespace: '{{ namespace }}'
+    labels:
+      app: '{{ gogs_app_label }}'
+      service: '{{ gogs_service_label }}'
+    replicas: 1
+    selector:
+      app: '{{ gogs_app_label }}'
+      service: '{{ gogs_service_label }}'
+    spec_template_metadata_labels:
+      app: '{{ gogs_app_label }}'
+      service: '{{ gogs_service_label }}'
+    containers:
+    - image: wkulhanek/gogs:11.34
+      name: gogs
+      ports:
+      - container_port: 3000
+        protocol: TCP
+      termination_message_path: /dev/termination-log
+      volume_mounts:
+      - mount_path: /data/
+        name: gogs-volume-1
+      - mount_path: /opt/gogs/custom/conf
+        name: gogs-config-volume
+      liveness_probe:
+        exec:
+          command:
+          - echo
+          - ok
+        failure_threshold: 3
+        initial_delay_seconds: 60
+        period_seconds: 10
+        success_threshold: 1
+        timeout_seconds: 1
+      readiness_probe:
+        http_get:
+          path: /
+          port: 3000
+          scheme: HTTP
+        failure_threshold: 3
+        initial_delay_seconds: 60
+        period_seconds: 10
+        success_threshold: 1
+        timeout_seconds: 3
+    volumes:
+    - name: gogs-volume-1
+      persistent_volume_claim:
+        claim_name: gogs-data
+    - name: gogs-config-volume
+      config_map:
+        name: gogs-app-ini
+    test: false
+    triggers:
+    - type: ConfigChange
+  register: gogs_deployment_config
+
+- name: create gogs service
+  k8s_v1_service:
+    name: gogs-svc
+    namespace: '{{ namespace }}'
+    labels:
+      app: '{{ gogs_app_label }}'
+      service: '{{ gogs_service_label }}'
+    selector:
+      app: '{{ gogs_app_label }}'
+      service: '{{ gogs_service_label }}'
+    ports:
+    - name: port-3000
+      port: 3000
+      protocol: TCP
+      target_port: 3000
+  register: gogs_service
+
+- name: create gogs route
+  openshift_v1_route:
+    name: gogs
+    namespace: '{{ namespace }}'
+    labels:
+      app: '{{ gogs_app_label }}'
+      service: '{{ gogs_service_label }}'
+    spec_port_target_port: port-3000
+    to_name: gogs-svc
+  register: gogs_route
+
+- name: create gogs app.ini from template
+  template:
+    src: gogs-app-template.ini
+    dest: /tmp/app.ini
+
+- name: create gogs-app-ini configmap
+  shell: oc create configmap gogs-app-ini -n {{ namespace }} --from-file=/tmp/app.ini
+
+- name: label gogs-app-ini configmap
+  k8s_v1_config_map:
+    name: gogs-app-ini
+    namespace: '{{ namespace }}'
+    state: present
+    labels:
+      app: '{{ gogs_app_label }}'
+      service: '{{ gogs_service_label }}'
+
+- name: encode bind credentials
+  asb_encode_binding:
+    fields:
+      GOGS_DB_TYPE: postgres
+      GOGS_DB_HOST: '{{ gogs_db_app_label }}.{{ namespace }}.svc'
+      GOGS_DB_PORT: '{{ gogs_db_port }}'
+      GOGS_DB_NAME: '{{ gogs_db_name }}'
+      GOGS_DB_USER: '{{ gogs_db_user }}'
+      GOGS_DB_PASSWORD: '{{ gogs_db_password }}'

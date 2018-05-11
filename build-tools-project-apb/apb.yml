@@ -1,13 +1,189 @@
 version: 1.0
 name: build-tools-project-apb
 description: This APB creates a standard set of build tools in an OCP project
-bindable: False
+bindable: True
 async: optional
 metadata:
   displayName: "MitziCom Build Tools Project"
+  providerDisplayName: "MitziCom"
+  dependencies: []
+  documentationUrl: "https://github.com/ryan-highley/ocp-advdev-homework/tree/master/build-tools-project-apb"
 plans:
   - name: default
-    description: The default plan deploying the build tools project and the tools
+    description: The plan deploying various build tools to the project
     free: True
     metadata: {}
-    parameters: []
+    parameters:
+      - name: include_gogs
+        title: Deploy Gogs?
+        type: boolean
+        required: True
+        default: True
+        display_group: Gogs Configuration
+      - name: gogs_volume_request
+        title: Data Persistent Volume Size Requested
+        type: string
+        required: True
+        default: 4Gi
+        display_group: Gogs Configuration
+      - name: gogs_db_user
+        title: Database Username
+        type: string
+        required: True
+        default: gogs
+        display_group: Gogs Configuration
+      - name: gogs_db_password
+        title: Database Password
+        type: string
+        required: True
+        default: gogs
+        display_type: password
+        display_group: Gogs Configuration
+      - name: gogs_db_name
+        title: Database Name
+        type: string
+        required: True
+        default: gogs
+        display_group: Gogs Configuration
+      - name: gogs_db_volume_request
+        title: Database Persistent Volume Size Requested
+        type: string
+        required: True
+        default: 4Gi
+        display_group: Gogs Configuration
+
+      - name: include_sonarqube
+        title: Deploy SonarQube?
+        type: boolean
+        required: True
+        default: True
+        display_group: SonarQube Configuration
+      - name: sonarqube_db_user
+        title: Database Username
+        type: string
+        required: True
+        default: sonar
+        display_group: SonarQube Configuration
+      - name: sonarqube_db_password
+        title: Database Password
+        type: string
+        required: True
+        default: sonar
+        display_type: password
+        display_group: SonarQube Configuration
+      - name: sonarqube_db_name
+        title: Database Name
+        type: string
+        required: True
+        default: sonar
+        display_group: SonarQube Configuration
+      - name: sonarqube_db_volume_request
+        title: Database Persistent Volume Size Requested
+        type: string
+        required: True
+        default: 4Gi
+        display_group: SonarQube Configuration
+      - name: sonarqube_memory_request
+        title: Memory Requested
+        type: string
+        required: True
+        default: 1.5Gi
+        display_group: SonarQube Configuration
+      - name: sonarqube_memory_limit
+        title: Memory Limit
+        type: string
+        required: True
+        default: 3Gi
+        display_group: SonarQube Configuration
+      - name: sonarqube_cpu_request
+        title: CPU Requested
+        type: integer
+        required: True
+        default: 1
+        display_group: SonarQube Configuration
+      - name: sonarqube_cpu_limit
+        title: CPU Limit
+        type: integer
+        required: True
+        default: 2
+        display_group: SonarQube Configuration
+
+      - name: include_nexus
+        title: Deploy Nexus?
+        type: boolean
+        required: True
+        default: True
+        display_group: Nexus Configuration
+      - name: nexus_volume_request
+        title: Database Persistent Volume Size Requested
+        type: string
+        required: True
+        default: 4Gi
+        display_group: Nexus Configuration
+      - name: nexus_memory_request
+        title: Memory Requested
+        type: string
+        required: True
+        default: 1Gi
+        display_group: Nexus Configuration
+      - name: nexus_memory_limit
+        title: Memory Limit
+        type: string
+        required: True
+        default: 2Gi
+        display_group: Nexus Configuration
+      - name: nexus_redhat_proxy_repos
+        title: Create Red Hat and JBoss proxy repositories?
+        type: boolean
+        required: True
+        default: True
+      - name: nexus_maven_proxy_repos
+        title: Create Maven Public proxy repository?
+        type: boolean
+        required: True
+        default: True
+      - name: nexus_npm_repo
+        title: Create Node.js NPM repository?
+        type: boolean
+        required: True
+        default: True
+      - name: nexus_docker_repos
+        title: Create Docker repository?
+        type: boolean
+        required: True
+        default: True
+      - name: nexus_maven_release_repos
+        title: Create Maven release artifact repository?
+        type: boolean
+        required: True
+        default: True
+      - name: nexus_maven_snapshot_repos
+        title: Create Maven snapshot artifact repository?
+        type: boolean
+        required: True
+        default: True
+
+      - name: include_jenkins
+        title: Deploy Jenkins?
+        type: boolean
+        required: True
+        default: True
+        display_group: Jenkins Configuration
+      - name: jenkins_volume_request
+        title: Database Persistent Volume Size Requested
+        type: string
+        required: True
+        default: 4Gi
+        display_group: Jenkins Configuration
+      - name: jenkins_memory_request
+        title: Memory Requested
+        type: string
+        required: True
+        default: 1Gi
+        display_group: Jenkins Configuration
+      - name: jenkins_memory_limit
+        title: Memory Limit
+        type: string
+        required: True
+        default: 2Gi
+        display_group: Jenkins Configuration

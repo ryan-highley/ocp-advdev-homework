@@ -1,0 +1,45 @@
+
+- name: delete gogs route
+  openshift_v1_route:
+    name: gogs
+    namespace: '{{ namespace }}'
+    state: absent
+
+- name: delete gogs service
+  k8s_v1_service:
+    name: gogs-svc
+    namespace: '{{ namespace }}'
+    state: absent
+
+- name: delete gogs deployment config
+  openshift_v1_deployment_config:
+    name: gogs
+    namespace: '{{ namespace }}'
+    state: absent
+
+- name: delete gogs configmap
+  k8s_v1_config_map:
+    name: gogs-app-ini
+    namespace: '{{ namespace }}'
+    state: absent
+
+- name: delete gogs data pvc
+  k8s_v1_persistent_volume_claim:
+    name: gogs-data
+    namespace: '{{ namespace }}'
+    state: absent
+
+- name: delete gogs image stream
+  openshift_v1_image_stream:
+    name: gogs-images
+    namespace: '{{ namespace }}'
+    state: absent
+
+- name: delete pg instance
+  shell: "oc delete -n {{ namespace }} all -l app=postgresql-gogs"
+
+- name: delete pg pvc
+  shell: "oc delete -n {{ namespace }} pvc -l app=postgresql-gogs"
+
+- name: delete pg secret
+  shell: "oc delete -n {{ namespace }} secret -l app=postgresql-gogs"

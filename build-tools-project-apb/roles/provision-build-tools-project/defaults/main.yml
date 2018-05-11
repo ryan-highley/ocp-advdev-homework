@@ -1,0 +1,5 @@
+
+gogs_db_app_label: postgresql-gogs
+gogs_db_port: 5432
+gogs_app_label: gogs
+gogs_service_label: gogs
