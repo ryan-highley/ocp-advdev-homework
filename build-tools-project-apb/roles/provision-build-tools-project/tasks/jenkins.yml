@@ -1,0 +1,61 @@
+- name: create jenkins instance
+  shell: "oc new-app jenkins-persistent -n {{ namespace }} --param JENKINS_SERVICE_NAME={{ jenkins_app_label }} --param ENABLE_OAUTH=true --param MEMORY_LIMIT={{ jenkins_master_memory_limit }} --param VOLUME_CAPACITY={{ jenkins_volume_request }} -l app={{ jenkins_app_label }},service={{ jenkins_service_label }}"
+
+- name: register jenkins service
+  k8s_v1_service:
+    name: '{{ jenkins_app_label }}'
+    namespace: '{{ namespace }}'
+    state: present
+  register: jenkins_service
+
+- name: register jenkins deployment config
+  openshift_v1_deployment_config:
+    name: '{{ jenkins_app_label }}'
+    namespace: '{{ namespace }}'
+    state: present
+  register: jenkins_deployment_config
+
+- name: create jenkins-slave image stream
+  openshift_v1_image_stream:
+    name: jenkins-slave
+    namespace: '{{ namespace }}'
+    labels:
+      app: '{{ jenkins_app_label }}'
+      service: '{{ jenkins_service_label }}'
+
+- name: create slave pod build config
+  openshift_v1_build_config:
+    name: jenkins-slave-build-config
+    namespace: '{{ namespace }}'
+    labels:
+      app: '{{ jenkins_app_label }}'
+      service: '{{ jenkins_service_label }}'
+    source:
+      dockerfile: |
+        FROM docker.io/openshift/jenkins-slave-maven-centos7:v3.9
+        USER root
+        RUN yum -y install skopeo apb && \
+            yum clean all
+        USER 1001
+      images:
+      - from:
+          kind: ImageStreamTag
+          name: jenkins-slave-maven-centos7:v3.9
+          namespace: openshift
+      type: Dockerfile
+    strategy:
+      dockerStrategy:
+        from:
+          kind: DockerImage
+          name: jenkins-slave-maven-centos7:v3.9
+          namespace: openshift
+      type: Docker
+    output:
+      to:
+        kind: ImageStreamTag
+        name: jenkins-slave:latest
+        namespace: '{{ namespace }}'
+
+- name: encode bind credentials
+  asb_encode_binding:
+    fields: {}

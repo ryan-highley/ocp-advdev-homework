@@ -2,3 +2,15 @@
 - name: destroy gogs
   include_tasks: gogs.yml
   when: include_gogs == true
+
+- name: destroy nexus
+  include_tasks: nexus.yml
+  when: include_nexus == true
+
+- name: destroy sonarqube
+  include_tasks: sonarqube.yml
+  when: include_sonarqube == true
+
+- name: destroy jenkins
+  include_tasks: jenkins.yml
+  when: include_jenkins == true

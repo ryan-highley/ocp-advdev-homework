@@ -1,0 +1,134 @@
+- name: create pg instance
+  shell: "oc new-app postgresql-persistent -n {{ namespace }} --param DATABASE_SERVICE_NAME={{ sonarqube_db_app_label }} --param POSTGRESQL_DATABASE={{ sonarqube_db_password }} --param POSTGRESQL_USER={{ sonarqube_db_user }} --param POSTGRESQL_PASSWORD={{ sonarqube_db_password }} --param VOLUME_CAPACITY={{ sonarqube_db_volume_request }} -l app={{ sonarqube_db_app_label }},service={{ sonarqube_service_label }}"
+
+- name: register pg service
+  k8s_v1_service:
+    name: '{{ sonarqube_db_app_label }}'
+    namespace: '{{ namespace }}'
+    state: present
+  register: sonarqube_db_service
+
+- name: create sonarqube data pvc
+  k8s_v1_persistent_volume_claim:
+    name: sonarqube-data
+    namespace: '{{ namespace }}'
+    labels:
+      app: '{{ sonarqube_app_label }}'
+      service: '{{ sonarqube_service_label }}'
+    access_modes:
+      - ReadWriteOnce
+    resources_requests:
+      storage: '{{ sonarqube_volume_request }}'
+
+- name: create sonarqube image stream
+  openshift_v1_image_stream:
+    name: sonarqube-images
+    namespace: '{{ namespace }}'
+    labels:
+      app: '{{ sonarqube_app_label }}'
+      service: '{{ sonarqube_service_label }}'
+
+- name: import sonarqube image
+  command: 'oc import-image sonarqube-images -n {{ namespace }} --from="{{ sonarqube_image }}"'
+
+- name: create sonarqube deployment config
+  openshift_v1_deployment_config:
+    name: sonarqube
+    namespace: '{{ namespace }}'
+    labels:
+      app: '{{ sonarqube_app_label }}'
+      service: '{{ sonarqube_service_label }}'
+    replicas: 1
+    strategy_type: Recreate
+    selector:
+      app: '{{ sonarqube_app_label }}'
+      service: '{{ sonarqube_service_label }}'
+    spec_template_metadata_labels:
+      app: '{{ sonarqube_app_label }}'
+      service: '{{ sonarqube_service_label }}'
+    containers:
+    - image: '{{ sonarqube_image }}'
+      name: sonarqube
+      ports:
+      - container_port: 9000
+        protocol: TCP
+      termination_message_path: /dev/termination-log
+      volume_mounts:
+      - mount_path: /opt/sonarqube/data
+        name: sonarqube-volume-1
+      env:
+      - SONARQUBE_JDBC_USERNAME: '{{ sonarqube_db_user }}'
+      - SONARQUBE_JDBC_PASSWORD: '{{ sonarqube_db_password }}'
+      - SONARQUBE_JDBC_URL: 'jdbc:postgresql://{{ sonarqube_db_app_label }}/{{ sonarqube_db_name }}'
+      resources:
+        limits:
+          memory: '{{ sonarqube_memory_limit }}'
+          cpu: '{{ sonarqube_cpu_limit }}'
+        requests:
+          memory: '{{ sonarqube_memory_request }}'
+          cpu: '{{ sonarqube_cpu_request }}'
+      liveness_probe:
+        exec:
+          command:
+          - echo
+          - ok
+        failure_threshold: 3
+        initial_delay_seconds: 40
+        period_seconds: 10
+        success_threshold: 1
+        timeout_seconds: 1
+      readiness_probe:
+        http_get:
+          path: /about
+          port: 9000
+          scheme: HTTP
+        failure_threshold: 3
+        initial_delay_seconds: 20
+        period_seconds: 10
+        success_threshold: 1
+        timeout_seconds: 3
+    volumes:
+    - name: sonarqube-volume-1
+      persistent_volume_claim:
+        claim_name: sonarqube-data
+    triggers:
+    - type: ConfigChange
+  register: sonarqube_deployment_config
+
+- name: create sonarqube service
+  k8s_v1_service:
+    name: sonarqube-svc
+    namespace: '{{ namespace }}'
+    labels:
+      app: '{{ sonarqube_app_label }}'
+      service: '{{ sonarqube_service_label }}'
+    selector:
+      app: '{{ sonarqube_app_label }}'
+      service: '{{ sonarqube_service_label }}'
+    ports:
+    - name: port-9000
+      port: 9000
+      protocol: TCP
+      target_port: 9000
+  register: sonarqube_service
+
+- name: create sonarqube route
+  openshift_v1_route:
+    name: sonarqube
+    namespace: '{{ namespace }}'
+    labels:
+      app: '{{ sonarqube_app_label }}'
+      service: '{{ sonarqube_service_label }}'
+    spec_port_target_port: port-9000
+    to_name: sonarqube-svc
+  register: sonarqube_route
+
+- name: encode bind credentials
+  asb_encode_binding:
+    fields:
+      SONARQUBE_DB_TYPE: postgres
+      SONARQUBE_DB_HOST: '{{ sonarqube_db_app_label }}.{{ namespace }}.svc'
+      SONARQUBE_DB_PORT: '{{ sonarqube_db_port }}'
+      SONARQUBE_DB_NAME: '{{ sonarqube_db_name }}'
+      SONARQUBE_DB_USER: '{{ sonarqube_db_user }}'
+      SONARQUBE_DB_PASSWORD: '{{ sonarqube_db_password }}'

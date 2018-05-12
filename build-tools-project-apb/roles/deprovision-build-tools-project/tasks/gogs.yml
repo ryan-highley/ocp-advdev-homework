@@ -36,10 +36,10 @@
     state: absent
 
 - name: delete pg instance
-  shell: "oc delete -n {{ namespace }} all -l app=postgresql-gogs"
+  shell: "oc delete -n {{ namespace }} all -l app={{ gogs_db_app_label }}"
 
 - name: delete pg pvc
-  shell: "oc delete -n {{ namespace }} pvc -l app=postgresql-gogs"
+  shell: "oc delete -n {{ namespace }} pvc -l app={{ gogs_db_app_label }}"
 
 - name: delete pg secret
-  shell: "oc delete -n {{ namespace }} secret -l app=postgresql-gogs"
+  shell: "oc delete -n {{ namespace }} secret -l app={{ gogs_db_app_label }}"

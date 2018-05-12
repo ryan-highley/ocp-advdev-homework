@@ -1,0 +1,15 @@
+
+- name: delete jenkins instance
+  shell: "oc delete -n {{ namespace }} all -l app={{ jenkins_app_label }}"
+
+- name: delete jenkins pvc
+  shell: "oc delete -n {{ namespace }} pvc -l app={{ jenkins_app_label }}"
+
+- name: delete jenkins secret
+  shell: "oc delete -n {{ namespace }} secret -l app={{ jenkins_app_label }}"
+
+- name: delete jenkins-slave image stream
+  openshift_v1_image_stream:
+    name: jenkins-slave
+    namespace: '{{ namespace }}'
+    state: absent

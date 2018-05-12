@@ -29,7 +29,7 @@
       service: '{{ gogs_service_label }}'
 
 - name: import gogs image
-  command: 'oc import-image gogs-images -n {{ namespace }} --from="docker.io/wkulhanek/gogs:11.34"'
+  command: 'oc import-image gogs-images -n {{ namespace }} --from="{{ gogs_image }}"'
 # - name: import gogs image
 #   openshift_v1_image_stream_import:
 #     name: gogs-images
@@ -37,8 +37,8 @@
 #     images:
 #     - from:
 #         kind: DockerImage
-#         name: docker.io/wkulhanek/gogs:11.34
-#       name: "11.34"
+#         name: '{{ gogs_image }}'
+#       name: "latest"
 #       reference_policy:
 #         type: Source
 
@@ -57,7 +57,7 @@
       app: '{{ gogs_app_label }}'
       service: '{{ gogs_service_label }}'
     containers:
-    - image: wkulhanek/gogs:11.34
+    - image: '{{ gogs_image }}'
       name: gogs
       ports:
       - container_port: 3000
@@ -95,7 +95,6 @@
     - name: gogs-config-volume
       config_map:
         name: gogs-app-ini
-    test: false
     triggers:
     - type: ConfigChange
   register: gogs_deployment_config

@@ -1,0 +1,136 @@
+- name: create nexus data pvc
+  k8s_v1_persistent_volume_claim:
+    name: nexus-data
+    namespace: '{{ namespace }}'
+    labels:
+      app: '{{ nexus_app_label }}'
+      service: '{{ nexus_service_label }}'
+    access_modes:
+      - ReadWriteOnce
+    resources_requests:
+      storage: '{{ nexus_volume_request }}'
+
+- name: create nexus image stream
+  openshift_v1_image_stream:
+    name: nexus-images
+    namespace: '{{ namespace }}'
+    labels:
+      app: '{{ nexus_app_label }}'
+      service: '{{ nexus_service_label }}'
+
+- name: import nexus image
+  command: 'oc import-image nexus-images -n {{ namespace }} --from="{{ nexus_image }}"'
+
+- name: create nexus deployment config
+  openshift_v1_deployment_config:
+    name: nexus
+    namespace: '{{ namespace }}'
+    labels:
+      app: '{{ nexus_app_label }}'
+      service: '{{ nexus_service_label }}'
+    replicas: 1
+    strategy_type: Recreate
+    selector:
+      app: '{{ nexus_app_label }}'
+      service: '{{ nexus_service_label }}'
+    spec_template_metadata_labels:
+      app: '{{ nexus_app_label }}'
+      service: '{{ nexus_service_label }}'
+    containers:
+    - image: '{{ nexus_image }}'
+      name: nexus
+      resources:
+        limits:
+          memory: '{{ nexus_memory_limit }}'
+        requests:
+          memory: '{{ nexus_memory_request }}'
+      ports:
+      - container_port: 8081
+        protocol: TCP
+      termination_message_path: /dev/termination-log
+      volume_mounts:
+      - mount_path: /nexus-data/
+        name: nexus-volume-1
+      liveness_probe:
+        exec:
+          command:
+          - echo
+          - ok
+        failure_threshold: 3
+        initial_delay_seconds: 60
+        period_seconds: 10
+        success_threshold: 1
+        timeout_seconds: 1
+      readiness_probe:
+        http_get:
+          path: /repository/maven-public/
+          port: 8081
+          scheme: HTTP
+        failure_threshold: 3
+        initial_delay_seconds: 60
+        period_seconds: 10
+        success_threshold: 1
+        timeout_seconds: 3
+    volumes:
+    - name: nexus-volume-1
+      persistent_volume_claim:
+        claim_name: nexus-data
+    test: false
+    triggers:
+    - type: ConfigChange
+  register: nexus_deployment_config
+
+- name: create nexus service
+  k8s_v1_service:
+    name: nexus-svc
+    namespace: '{{ namespace }}'
+    labels:
+      app: '{{ nexus_app_label }}'
+      service: '{{ nexus_service_label }}'
+    selector:
+      app: '{{ nexus_app_label }}'
+      service: '{{ nexus_service_label }}'
+    ports:
+    - name: port-8081
+      port: 8081
+      protocol: TCP
+      target_port: 8081
+    - name: port-5000
+      port: 5000
+      protocol: TCP
+      target_port: 5000
+  register: nexus_service
+
+- name: create nexus web route
+  openshift_v1_route:
+    name: nexus
+    namespace: '{{ namespace }}'
+    labels:
+      app: '{{ nexus_app_label }}'
+      service: '{{ nexus_service_label }}'
+    spec_port_target_port: port-8081
+    to_name: nexus-svc
+  register: nexus_web_route
+
+- name: copy nexus repository configuration script
+  copy:
+    src: templates/setup_nexus3.sh
+    dest: /tmp/setup_nexus3.sh
+
+- name: configure nexus repositories
+  shell: '/bin/bash -- /tmp/setup_nexus3.sh {{ nexus_admin_user }} {{ nexus_admin_password }} http://{{ nexus_web_route.route.spec.host }}'
+
+- name: create nexus docker route
+  openshift_v1_route:
+    name: nexus-docker
+    namespace: '{{ namespace }}'
+    labels:
+      app: '{{ nexus_app_label }}'
+      service: '{{ nexus_service_label }}'
+    spec_port_target_port: port-5000
+    to_name: nexus-svc
+  register: nexus_docker_route
+
+- name: encode bind credentials
+  asb_encode_binding:
+    fields: {}

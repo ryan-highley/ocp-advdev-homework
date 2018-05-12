@@ -3,3 +3,19 @@ gogs_db_app_label: postgresql-gogs
 gogs_db_port: 5432
 gogs_app_label: gogs
 gogs_service_label: gogs
+gogs_image: docker.io/wkulhanek/gogs:11.34
+
+nexus_app_label: nexus
+nexus_service_label: nexus
+nexus_image: docker.io/sonatype/nexus3:latest
+nexus_admin_user: admin
+nexus_admin_password: admin123
+
+sonarqube_db_app_label: postgresql-sonarqube
+sonarqube_db_port: 5432
+sonarqube_app_label: sonarqube
+sonarqube_service_label: sonarqube
+sonarqube_image: docker.io/wkulhanek/sonarqube:6.7.3
+
+jenkins_app_label: jenkins
+jenkins_service_label: jenkins

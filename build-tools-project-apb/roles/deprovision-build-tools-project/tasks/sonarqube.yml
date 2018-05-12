@@ -1,0 +1,39 @@
+
+- name: create sonarqube route
+  openshift_v1_route:
+    name: sonarqube
+    namespace: '{{ namespace }}'
+    state: absent
+
+- name: create sonarqube service
+  k8s_v1_service:
+    name: sonarqube-svc
+    namespace: '{{ namespace }}'
+    state: absent
+
+- name: create sonarqube deployment config
+  openshift_v1_deployment_config:
+    name: sonarqube
+    namespace: '{{ namespace }}'
+    state: absent
+
+- name: create sonarqube data pvc
+  k8s_v1_persistent_volume_claim:
+    name: sonarqube-data
+    namespace: '{{ namespace }}'
+    state: absent
+
+- name: create sonarqube image stream
+  openshift_v1_image_stream:
+    name: sonarqube-images
+    namespace: '{{ namespace }}'
+    state: absent
+
+- name: delete pg instance
+  shell: "oc delete -n {{ namespace }} all -l app={{ sonarqube_db_app_label }}"
+
+- name: delete pg pvc
+  shell: "oc delete -n {{ namespace }} pvc -l app={{ sonarqube_db_app_label }}"
+
+- name: delete pg secret
+  shell: "oc delete -n {{ namespace }} secret -l app={{ sonarqube_db_app_label }}"

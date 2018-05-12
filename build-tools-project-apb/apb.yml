@@ -58,6 +58,12 @@ plans:
         required: True
         default: True
         display_group: SonarQube Configuration
+      - name: sonarqube_volume_request
+        title: Data Persistent Volume Size Requested
+        type: string
+        required: True
+        default: 4Gi
+        display_group: SonarQube Configuration
       - name: sonarqube_db_user
         title: Database Username
         type: string
@@ -175,14 +181,14 @@ plans:
         required: True
         default: 4Gi
         display_group: Jenkins Configuration
-      - name: jenkins_memory_request
-        title: Memory Requested
+      - name: jenkins_master_memory_limit
+        title: Master Memory Limit
         type: string
         required: True
-        default: 1Gi
+        default: 2Gi
         display_group: Jenkins Configuration
-      - name: jenkins_memory_limit
-        title: Memory Limit
+      - name: jenkins_slave_memory_limit
+        title: Slave Memory Limit
         type: string
         required: True
         default: 2Gi
