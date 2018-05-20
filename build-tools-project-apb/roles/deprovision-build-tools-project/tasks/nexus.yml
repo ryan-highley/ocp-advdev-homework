@@ -5,6 +5,12 @@
     namespace: '{{ namespace }}'
     state: absent
 
+- name: delete nexus docker route
+  openshift_v1_route:
+    name: nexus-docker
+    namespace: '{{ namespace }}'
+    state: absent
+
 - name: delete nexus service
   k8s_v1_service:
     name: nexus-svc

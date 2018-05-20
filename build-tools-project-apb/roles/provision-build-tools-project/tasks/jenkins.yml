@@ -55,7 +55,3 @@
         kind: ImageStreamTag
         name: jenkins-slave:latest
         namespace: '{{ namespace }}'
-
-- name: encode bind credentials
-  asb_encode_binding:
-    fields: {}

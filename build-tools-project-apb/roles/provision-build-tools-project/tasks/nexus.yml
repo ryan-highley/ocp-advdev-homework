@@ -18,8 +18,8 @@
       app: '{{ nexus_app_label }}'
       service: '{{ nexus_service_label }}'
 
-- name: import nexus image
-  command: 'oc import-image nexus-images -n {{ namespace }} --from="{{ nexus_image }}"'
+# - name: import nexus image
+#   command: 'oc import-image nexus-images -n {{ namespace }} --from="{{ nexus_image }}"'
 
 - name: create nexus deployment config
   openshift_v1_deployment_config:
@@ -101,6 +101,12 @@
       target_port: 5000
   register: nexus_service
 
+- name: wait for nexus web port
+  wait_for:
+    port: 8081
+    host: 'nexus-svc.{{ namespace }}.svc'
+    timeout: 3000
+
 - name: create nexus web route
   openshift_v1_route:
     name: nexus
@@ -130,7 +136,3 @@
     spec_port_target_port: port-5000
     to_name: nexus-svc
   register: nexus_docker_route
-
-- name: encode bind credentials
-  asb_encode_binding:
-    fields: {}

@@ -14,3 +14,19 @@
 - name: deploy jenkins
   include_tasks: jenkins.yml
   when: include_jenkins == true
+
+- name: encode bind credentials
+  asb_encode_binding:
+    fields:
+      GOGS_DB_TYPE: postgres
+      GOGS_DB_HOST: '{{ gogs_db_app_label }}.{{ namespace }}.svc'
+      GOGS_DB_PORT: '{{ gogs_db_port }}'
+      GOGS_DB_NAME: '{{ gogs_db_name }}'
+      GOGS_DB_USER: '{{ gogs_db_user }}'
+      GOGS_DB_PASSWORD: '{{ gogs_db_password }}'
+      SONARQUBE_DB_TYPE: postgres
+      SONARQUBE_DB_HOST: '{{ sonarqube_db_app_label }}.{{ namespace }}.svc'
+      SONARQUBE_DB_PORT: '{{ sonarqube_db_port }}'
+      SONARQUBE_DB_NAME: '{{ sonarqube_db_name }}'
+      SONARQUBE_DB_USER: '{{ sonarqube_db_user }}'
+      SONARQUBE_DB_PASSWORD: '{{ sonarqube_db_password }}'

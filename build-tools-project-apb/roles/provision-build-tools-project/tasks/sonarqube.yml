@@ -28,8 +28,8 @@
       app: '{{ sonarqube_app_label }}'
       service: '{{ sonarqube_service_label }}'
 
-- name: import sonarqube image
-  command: 'oc import-image sonarqube-images -n {{ namespace }} --from="{{ sonarqube_image }}"'
+# - name: import sonarqube image
+#   command: 'oc import-image sonarqube-images -n {{ namespace }} --from="{{ sonarqube_image }}"'
 
 - name: create sonarqube deployment config
   openshift_v1_deployment_config:
@@ -57,9 +57,12 @@
       - mount_path: /opt/sonarqube/data
         name: sonarqube-volume-1
       env:
-      - SONARQUBE_JDBC_USERNAME: '{{ sonarqube_db_user }}'
-      - SONARQUBE_JDBC_PASSWORD: '{{ sonarqube_db_password }}'
-      - SONARQUBE_JDBC_URL: 'jdbc:postgresql://{{ sonarqube_db_app_label }}/{{ sonarqube_db_name }}'
+      - name: SONARQUBE_JDBC_USERNAME
+        value: '{{ sonarqube_db_user }}'
+      - name: SONARQUBE_JDBC_PASSWORD
+        value: '{{ sonarqube_db_password }}'
+      - name: SONARQUBE_JDBC_URL
+        value: 'jdbc:postgresql://{{ sonarqube_db_app_label }}/{{ sonarqube_db_name }}'
       resources:
         limits:
           memory: '{{ sonarqube_memory_limit }}'
@@ -122,13 +125,3 @@
     spec_port_target_port: port-9000
     to_name: sonarqube-svc
   register: sonarqube_route
-
-- name: encode bind credentials
-  asb_encode_binding:
-    fields:
-      SONARQUBE_DB_TYPE: postgres
-      SONARQUBE_DB_HOST: '{{ sonarqube_db_app_label }}.{{ namespace }}.svc'
-      SONARQUBE_DB_PORT: '{{ sonarqube_db_port }}'
-      SONARQUBE_DB_NAME: '{{ sonarqube_db_name }}'
-      SONARQUBE_DB_USER: '{{ sonarqube_db_user }}'
-      SONARQUBE_DB_PASSWORD: '{{ sonarqube_db_password }}'

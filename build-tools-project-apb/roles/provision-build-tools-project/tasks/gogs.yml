@@ -28,8 +28,8 @@
       app: '{{ gogs_app_label }}'
       service: '{{ gogs_service_label }}'
 
-- name: import gogs image
-  command: 'oc import-image gogs-images -n {{ namespace }} --from="{{ gogs_image }}"'
+# - name: import gogs image
+#   command: 'oc import-image gogs-images -n {{ namespace }} --from="{{ gogs_image }}"'
 # - name: import gogs image
 #   openshift_v1_image_stream_import:
 #     name: gogs-images
@@ -143,13 +143,3 @@
     labels:
       app: '{{ gogs_app_label }}'
       service: '{{ gogs_service_label }}'
-
-- name: encode bind credentials
-  asb_encode_binding:
-    fields:
-      GOGS_DB_TYPE: postgres
-      GOGS_DB_HOST: '{{ gogs_db_app_label }}.{{ namespace }}.svc'
-      GOGS_DB_PORT: '{{ gogs_db_port }}'
-      GOGS_DB_NAME: '{{ gogs_db_name }}'
-      GOGS_DB_USER: '{{ gogs_db_user }}'
-      GOGS_DB_PASSWORD: '{{ gogs_db_password }}'
