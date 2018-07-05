@@ -1,23 +1,48 @@
-- name: create jenkins instance
-  shell: "oc new-app jenkins-persistent -n {{ namespace }} --param JENKINS_SERVICE_NAME={{ jenkins_app_label }} --param ENABLE_OAUTH=true --param MEMORY_LIMIT={{ jenkins_master_memory_limit }} --param VOLUME_CAPACITY={{ jenkins_volume_request }} -l app={{ jenkins_app_label }},service={{ jenkins_service_label }}"
-
-- name: register jenkins service
-  k8s_v1_service:
-    name: '{{ jenkins_app_label }}'
+- name: create configmap for jenkins-slave pod template
+  k8s_v1_config_map:
+    name: jenkins-slave-maven-appdev
     namespace: '{{ namespace }}'
-    state: present
-  register: jenkins_service
-
-- name: register jenkins deployment config
-  openshift_v1_deployment_config:
-    name: '{{ jenkins_app_label }}'
-    namespace: '{{ namespace }}'
-    state: present
-  register: jenkins_deployment_config
+    labels:
+      app: '{{ jenkins_app_label }}'
+      service: '{{ jenkins_service_label }}'
+      role: jenkins-slave
+    data:
+      template1: |-
+        <org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
+          <inheritFrom></inheritFrom>
+          <name>{{ jenkins_slave_node_label }}</name>
+          <instanceCap>2147483647</instanceCap>
+          <idleMinutes>0</idleMinutes>
+          <label>{{ jenkins_slave_node_label }}</label>
+          <serviceAccount>jenkins</serviceAccount>
+          <nodeSelector></nodeSelector>
+          <volumes/>
+          <containers>
+            <org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
+              <name>jnlp</name>
+              <image>docker-registry.default.svc:5000/{{ namespace }}/{{ jenkins_slave_image_stream }}:{{ jenkins_slave_image_tag }}</image>
+              <privileged>false</privileged>
+              <alwaysPullImage>true</alwaysPullImage>
+              <workingDir>/tmp</workingDir>
+              <command></command>
+              <args>${computer.jnlpmac} ${computer.name}</args>
+              <ttyEnabled>false</ttyEnabled>
+              <resourceRequestCpu></resourceRequestCpu>
+              <resourceRequestMemory></resourceRequestMemory>
+              <resourceLimitCpu></resourceLimitCpu>
+              <resourceLimitMemory>{{ jenkins_slave_memory_limit }}</resourceLimitMemory>
+              <envVars/>
+            </org.csanchez.jenkins.plugins.kubernetes.ContainerTemplate>
+          </containers>
+          <envVars/>
+          <annotations/>
+          <imagePullSecrets/>
+          <nodeProperties/>
+        </org.csanchez.jenkins.plugins.kubernetes.PodTemplate>
 
 - name: create jenkins-slave image stream
   openshift_v1_image_stream:
-    name: jenkins-slave
+    name: '{{ jenkins_slave_image_stream }}'
     namespace: '{{ namespace }}'
     labels:
       app: '{{ jenkins_app_label }}'
@@ -30,28 +55,39 @@
     labels:
       app: '{{ jenkins_app_label }}'
       service: '{{ jenkins_service_label }}'
-    source:
-      dockerfile: |
-        FROM docker.io/openshift/jenkins-slave-maven-centos7:v3.9
-        USER root
-        RUN yum -y install skopeo apb && \
-            yum clean all
-        USER 1001
-      images:
-      - from:
-          kind: ImageStreamTag
-          name: jenkins-slave-maven-centos7:v3.9
-          namespace: openshift
-      type: Dockerfile
-    strategy:
-      dockerStrategy:
-        from:
-          kind: DockerImage
-          name: jenkins-slave-maven-centos7:v3.9
-          namespace: openshift
-      type: Docker
-    output:
-      to:
-        kind: ImageStreamTag
-        name: jenkins-slave:latest
-        namespace: '{{ namespace }}'
+    source_dockerfile: |
+      FROM {{ jenkins_slave_image_base }}:{{ jenkins_slave_image_tag }}
+      USER root
+      RUN yum -y install skopeo && \
+          yum -y clean all && \
+          rm -rf /var/cache/yum
+      USER 1001
+    strategy_type: Docker
+    output_to_kind: ImageStreamTag
+    output_to_namespace: '{{ namespace }}'
+    output_to_name: '{{ jenkins_slave_image_stream }}:{{ jenkins_slave_image_tag }}'
+
+- name: build slave pod image
+  shell: 'oc start-build -n {{ namespace }} jenkins-slave-build-config --follow'
+
+- name: create jenkins instance
+  shell: "oc new-app jenkins-persistent -n {{ namespace }} --param JENKINS_SERVICE_NAME={{ jenkins_app_label }} --param ENABLE_OAUTH=true --param MEMORY_LIMIT={{ jenkins_master_memory_limit }} --param VOLUME_CAPACITY={{ jenkins_volume_request }} -l app={{ jenkins_app_label }},service={{ jenkins_service_label }}"
+
+- name: create pipeline to test jenkins-slave
+  openshift_v1_build_config:
+    name: jenkins-slave-template-pipeline
+    namespace: '{{ namespace }}'
+    labels:
+      app: '{{ jenkins_app_label }}'
+      service: '{{ jenkins_service_label }}'
+    strategy_jenkins_pipeline_strategy_jenkinsfile: |-
+      node('{{ jenkins_slave_node_label }}') {
+          stage('Test skopeo') {
+              sh('skopeo --version')
+              sh('oc whoami')
+          }
+      }
+    strategy_type: JenkinsPipeline
+
+# - name: build pipeline to test jenkins-slave
+#   shell: 'oc start-build -n {{ namespace }} jenkins-slave-template-pipeline --follow'

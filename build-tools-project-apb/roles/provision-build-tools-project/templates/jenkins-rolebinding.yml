@@ -1,0 +1,14 @@
+---
+apiVersion: v1
+kind: RoleBinding
+metadata:
+  name: '{{ jenkins_app_label }}_edit'
+  namespace: '{{ namespace }}'
+  labels:
+    app: '{{ jenkins_app_label }}'
+    service: '{{ jenkins_service_label }}'
+roleRef:
+  name: edit
+subjects:
+- kind: ServiceAccount
+  name: '{{ jenkins_app_label }}'

@@ -19,3 +19,7 @@ sonarqube_image: docker.io/wkulhanek/sonarqube:6.7.3
 
 jenkins_app_label: jenkins
 jenkins_service_label: jenkins
+jenkins_slave_image_tag: v3.9
+jenkins_slave_image_base: docker.io/openshift/jenkins-slave-maven-centos7
+jenkins_slave_image_stream: jenkins-slave-maven-appdev
+jenkins_slave_node_label: maven-appdev

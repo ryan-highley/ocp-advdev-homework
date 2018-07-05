@@ -18,7 +18,7 @@ plans:
         title: Deploy Gogs?
         type: boolean
         required: True
-        default: True
+        default: False
         display_group: Gogs Configuration
       - name: gogs_volume_request
         title: Data Persistent Volume Size Requested
@@ -56,7 +56,7 @@ plans:
         title: Deploy SonarQube?
         type: boolean
         required: True
-        default: True
+        default: False
         display_group: SonarQube Configuration
       - name: sonarqube_volume_request
         title: Data Persistent Volume Size Requested
@@ -118,7 +118,7 @@ plans:
         title: Deploy Nexus?
         type: boolean
         required: True
-        default: True
+        default: False
         display_group: Nexus Configuration
       - name: nexus_volume_request
         title: Database Persistent Volume Size Requested
